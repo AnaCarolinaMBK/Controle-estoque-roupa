@@ -1,74 +1,101 @@
  const form = document.getElementById('product-form');
- const stockList = document.getElementById('stock-list');
- const valorGeralLabel = document.getElementById('valor-geral');
+const stockList = document.getElementById('stock-list');
+const valorGeralLabel = document.getElementById('valor-geral');
 
- let estoque = JSON.parse(localStorage.getItem('meuEstoque')) || [];
- atualizarTabela();
+// URL que você gerou no Apps Script
+const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycby9hPVU5qPUSquf1d19JTMKGo0M2-ziduFASYxMcc_lGpBzcVUs-In0SRcUJCDt5E31/exec";
 
- form.addEventListener('submit', (e) => {
-     e.preventDefault();
-     const novoItem = {
-         nome: document.getElementById('nome').value,
-         tamanho: document.getElementById('tamanho').value,
-         cor: document.getElementById('cor').value,
-         quantidade: parseInt(document.getElementById('quantidade').value),
-         preco: parseFloat(document.getElementById('preco').value)
-     };
-     estoque.push(novoItem);
-     salvarEAtualizar();
-     form.reset();
-     document.getElementById('tamanho').value = "M"; // Valor padrão
- });
+let estoque = JSON.parse(localStorage.getItem('meuEstoque')) || [];
+atualizarTabela();
 
- function salvarEAtualizar() {
-     localStorage.setItem('meuEstoque', JSON.stringify(estoque));
-     atualizarTabela();
- }
+form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const novoItem = {
+        nome: document.getElementById('nome').value,
+        tamanho: document.getElementById('tamanho').value,
+        cor: document.getElementById('cor').value,
+        quantidade: parseInt(document.getElementById('quantidade').value),
+        preco: parseFloat(document.getElementById('preco').value)
+    };
+    estoque.push(novoItem);
+    salvarEAtualizar(novoItem); // Passamos o novo item para enviar à planilha
+    form.reset();
+    document.getElementById('tamanho').value = "M"; 
+});
 
- function atualizarTabela() {
-     stockList.innerHTML = '';
-     let somaTotal = 0;
+function salvarEAtualizar(itemParaEnviar = null) {
+    localStorage.setItem('meuEstoque', JSON.stringify(estoque));
+    atualizarTabela();
 
-     estoque.forEach((item, index) => {
-         const totalItem = item.quantidade * item.preco;
-         somaTotal += totalItem;
+    // Se houver um novo item, envia para o Google Sheets
+    if (itemParaEnviar) {
+        enviarParaPlanilha(itemParaEnviar);
+    }
+}
 
-         const tr = document.createElement('tr');
-         tr.innerHTML = `
-             <td><strong>${item.nome}</strong><br><small>${item.tamanho} | ${item.cor}</small></td>
-             <td>${item.quantidade}</td>
-             <td>R$ ${totalItem.toFixed(2)}</td>
-             <td>
-                 <button class="btn-item add" onclick="alterarQtd(${index}, 1)">+</button>
-                 <button class="btn-item remove" onclick="alterarQtd(${index}, -1)">-</button>
-                 <button class="btn-item delete" onclick="excluirItem(${index})">x</button>
-             </td>
-         `;
-         stockList.appendChild(tr);
-     });
+function enviarParaPlanilha(item) {
+    const dados = {
+        nome: item.nome,
+        tamanho: `${item.tamanho} | ${item.cor}`,
+        quantidade: item.quantidade,
+        precoUnit: item.preco,
+        subtotal: item.quantidade * item.preco
+    };
 
-     valorGeralLabel.innerText = `R$ ${somaTotal.toFixed(2)}`;
- }
+    fetch(URL_GOOGLE_SHEETS, {
+        method: "POST",
+        mode: "no-cors", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados)
+    })
+    .then(() => console.log("Sincronizado com o Dashboard!"))
+    .catch(err => console.error("Erro na conexão:", err));
+}
 
- window.alterarQtd = function(index, valor) {
-     estoque[index].quantidade += valor;
-     if (estoque[index].quantidade < 0) estoque[index].quantidade = 0;
-     salvarEAtualizar();
- };
+function atualizarTabela() {
+    stockList.innerHTML = '';
+    let somaTotal = 0;
 
- window.excluirItem = function(index) {
-     if(confirm("Deseja apagar este produto?")) {
-         estoque.splice(index, 1);
-         salvarEAtualizar();
-     }
- };
+    estoque.forEach((item, index) => {
+        const totalItem = item.quantidade * item.preco;
+        somaTotal += totalItem;
 
- window.filtrarEstoque = function() {
-     const termoBusca = document.getElementById('search-input').value.toLowerCase();
-     const rows = stockList.getElementsByTagName('tr');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${item.nome}</strong><br><small>${item.tamanho} | ${item.cor}</small></td>
+            <td>${item.quantidade}</td>
+            <td>R$ ${totalItem.toFixed(2)}</td>
+            <td>
+                <button class="btn-item add" onclick="alterarQtd(${index}, 1)">+</button>
+                <button class="btn-item remove" onclick="alterarQtd(${index}, -1)">-</button>
+                <button class="btn-item delete" onclick="excluirItem(${index})">x</button>
+            </td>
+        `;
+        stockList.appendChild(tr);
+    });
 
-     for (let i = 0; i < rows.length; i++) {
-         const textoLinha = rows[i].textContent.toLowerCase();
-         rows[i].style.display = textoLinha.includes(termoBusca) ? "" : "none";
-     }
- };
+    valorGeralLabel.innerText = `R$ ${somaTotal.toFixed(2)}`;
+}
+
+window.alterarQtd = function(index, valor) {
+    estoque[index].quantidade += valor;
+    if (estoque[index].quantidade < 0) estoque[index].quantidade = 0;
+    salvarEAtualizar();
+};
+
+window.excluirItem = function(index) {
+    if(confirm("Deseja apagar este produto?")) {
+        estoque.splice(index, 1);
+        salvarEAtualizar();
+    }
+};
+
+window.filtrarEstoque = function() {
+    const termoBusca = document.getElementById('search-input').value.toLowerCase();
+    const rows = stockList.getElementsByTagName('tr');
+
+    for (let i = 0; i < rows.length; i++) {
+        const textoLinha = rows[i].textContent.toLowerCase();
+        rows[i].style.display = textoLinha.includes(termoBusca) ? "" : "none";
+    }
+};
