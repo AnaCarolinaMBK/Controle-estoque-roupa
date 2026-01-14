@@ -1,5 +1,6 @@
 const form = document.getElementById('product-form');
 const stockList = document.getElementById('stock-list');
+const valorGeralLabel = document.getElementById('valor-geral');
 
 let estoque = JSON.parse(localStorage.getItem('meuEstoque')) || [];
 atualizarTabela();
@@ -10,7 +11,8 @@ form.addEventListener('submit', (e) => {
         nome: document.getElementById('nome').value,
         tamanho: document.getElementById('tamanho').value,
         cor: document.getElementById('cor').value,
-        quantidade: parseInt(document.getElementById('quantidade').value)
+        quantidade: parseInt(document.getElementById('quantidade').value),
+        preco: parseFloat(document.getElementById('preco').value)
     };
     estoque.push(novoItem);
     salvarEAtualizar();
@@ -23,15 +25,19 @@ function salvarEAtualizar() {
 }
 
 function atualizarTabela() {
-    if(!stockList) return;
     stockList.innerHTML = '';
+    let somaTotal = 0;
+
     estoque.forEach((item, index) => {
+        const totalItem = item.quantidade * item.preco;
+        somaTotal += totalItem;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${item.nome}</td>
-            <td>${item.tamanho}</td>
-            <td>${item.cor}</td>
+            <td>${item.nome} (${item.tamanho})<br><small>${item.cor}</small></td>
             <td><strong>${item.quantidade}</strong></td>
+            <td>R$ ${item.preco.toFixed(2)}</td>
+            <td>R$ ${totalItem.toFixed(2)}</td>
             <td>
                 <button class="btn-item add" onclick="alterarQtd(${index}, 1)">+</button>
                 <button class="btn-item remove" onclick="alterarQtd(${index}, -1)">-</button>
@@ -40,6 +46,8 @@ function atualizarTabela() {
         `;
         stockList.appendChild(tr);
     });
+
+    valorGeralLabel.innerText = `R$ ${somaTotal.toFixed(2)}`;
 }
 
 window.alterarQtd = function(index, valor) {
@@ -49,7 +57,7 @@ window.alterarQtd = function(index, valor) {
 };
 
 window.excluirItem = function(index) {
-    if(confirm("Remover este produto?")) {
+    if(confirm("Deseja apagar este produto?")) {
         estoque.splice(index, 1);
         salvarEAtualizar();
     }
