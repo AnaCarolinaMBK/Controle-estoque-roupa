@@ -5,6 +5,7 @@ const valorGeralLabel = document.getElementById('valor-geral');
 // URL que você gerou no Apps Script
 const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycby9hPVU5qPUSquf1d19JTMKGo0M2-ziduFASYxMcc_lGpBzcVUs-In0SRcUJCDt5E31/exec";
 
+
 let estoque = JSON.parse(localStorage.getItem('meuEstoque')) || [];
 atualizarTabela();
 
