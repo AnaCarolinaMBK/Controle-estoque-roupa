@@ -1,20 +1,17 @@
 const form = document.getElementById('product-form');
 const stockList = document.getElementById('stock-list');
 
-// Carregar dados ao abrir a página
 let estoque = JSON.parse(localStorage.getItem('meuEstoque')) || [];
 atualizarTabela();
 
 form.addEventListener('submit', (e) => {
     e.preventDefault();
-    
     const novoItem = {
         nome: document.getElementById('nome').value,
         tamanho: document.getElementById('tamanho').value,
         cor: document.getElementById('cor').value,
         quantidade: parseInt(document.getElementById('quantidade').value)
     };
-
     estoque.push(novoItem);
     salvarEAtualizar();
     form.reset();
@@ -26,8 +23,8 @@ function salvarEAtualizar() {
 }
 
 function atualizarTabela() {
+    if(!stockList) return;
     stockList.innerHTML = '';
-    
     estoque.forEach((item, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -52,7 +49,7 @@ window.alterarQtd = function(index, valor) {
 };
 
 window.excluirItem = function(index) {
-    if(confirm("Deseja remover este produto do estoque?")) {
+    if(confirm("Remover este produto?")) {
         estoque.splice(index, 1);
         salvarEAtualizar();
     }
